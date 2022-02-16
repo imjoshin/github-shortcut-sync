@@ -1,0 +1,17 @@
+{
+  "name": "github-shortcut-sync",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:j0sh77/github-shortcut-sync.git",
+  "author": "Josh <jcjohnson77@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@useshortcut/client": "^1.0.0",
+    "dotenv": "^16.0.0",
+    "github-api": "^3.4.0",
+    "yargs": "^17.3.1"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
