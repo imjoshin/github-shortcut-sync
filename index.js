@@ -110,7 +110,7 @@ async function sync() {
           console.log(`[dry run] Updating story: `, { ...updateStory, description: `${updateStory.description.substring(0, 16)}...`})
         } else {
           //  call update
-          await shortcut.updateStory(story.id, )
+          await shortcut.updateStory(story.id, updateStory)
         }
       }
     }
