@@ -1,5 +1,3 @@
-
-
 import yargs from "yargs"
 import Github from "github-api"
 import { ShortcutClient as Shortcut } from "@useshortcut/client"
@@ -47,11 +45,11 @@ const github = new Github({
 const shortcut = new Shortcut(process.env.SHORTCUT_AUTH)
 
 // TODO make this more async... github-api only supports full results grabbing
-// TODO add support for github webhook
-
-// TODO make better output
+// TODO add support for github webhook so we don't have to look at every issue
 
 async function sync() {
+  console.log()
+
   let status = ora({text: 'Fetching issues from Github', color: 'magenta'})
   status.start()
 
@@ -123,11 +121,12 @@ async function sync() {
         workflow_state_id: process.env.SHORTCUT_WORKFLOW_ID_NEW,
       }
 
+      metrics.created += 1
+
       if (args.dry) {
         // console.log(`\n[dry run] Creating story: `, { ...createStory, description: `${createStory.description.substring(0, 16)}...`})
       } else {
         storiesToCreate.push(createStory)
-        metrics.created += 1
 
         // batch issue creation
         if (storiesToCreate.length % 10 === 0) {
@@ -168,7 +167,7 @@ async function sync() {
 
   status.succeed()
 
-  console.log(`Created: ${metrics.created}, Updated: ${metrics.updated}, Closed: ${metrics.closed}`)
+  console.log(`\n${args.dry ? '[dry run] ' : ''}Created: ${metrics.created}, Updated: ${metrics.updated}, Closed: ${metrics.closed}\n`)
 
   return
 }

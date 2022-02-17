@@ -1,5 +1,7 @@
 # github-shortcut-sync
 
+Still a work in progress!
+
 Syncs Github issues to Shortcut stories.
 
 ## Install
