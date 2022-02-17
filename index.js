@@ -1,22 +1,27 @@
-const yargs = require("yargs")
-const GitHub = require("github-api")
-const Shortcut = require("@useshortcut/client").ShortcutClient
-require('dotenv').config()
 
-const args = yargs
+
+import yargs from "yargs"
+import Github from "github-api"
+import { ShortcutClient as Shortcut } from "@useshortcut/client"
+import ora from "ora"
+import dotenv from "dotenv";
+
+dotenv.config()
+
+const args = yargs()
   .scriptName("yarn start")
   .usage("$0 <command> [arguments]")  
   .option("dry", {
     alias: "d",
     type: "boolean",
-    default: true,
+    default: true, // TODO make this false
     description: "run a dry run of the tool",
   })
   .help()
   .alias("help", "h")
   .parse()
 
-const github = new GitHub({
+const github = new Github({
   token: process.env.GITHUB_AUTH
 })
 
@@ -28,13 +33,23 @@ const shortcut = new Shortcut(process.env.SHORTCUT_AUTH)
 // TODO make better output
 
 async function sync() {
-  console.log(`Syncing issues from GitHub to Shortcut...`)
+  let status = ora({text: 'Fetching issues from Github', color: 'magenta'})
+  status.start()
 
   const issueApi = await github.getIssues(process.env.GITHUB_REPO_OWNER, process.env.GITHUB_REPO)
   const issuesResponse = await issueApi.listIssues()
   const issues = issuesResponse.data.filter(issue => issue.html_url.indexOf('/pull/') < 0)
 
-  console.log(`Total GitHub issues: ${issues.length}`)
+  status.succeed()
+
+  const metrics = {
+    closed: 0,
+    created: 0,
+    updated: 0,
+  }
+
+  status = ora({text: 'Marked closed issues as Done in Shortcut', color: 'yellow'})
+  status.start()
 
   // Find closed Github issues and mark them as done
   const seenIssues = issues.map(issue => issue.id)
@@ -46,6 +61,8 @@ async function sync() {
     }
   }
 
+  metrics.closed = storiesToMarkDone.length
+
   if (storiesToMarkDone.length) {
     const storiesUpdate = {
       story_ids: storiesToMarkDone,
@@ -53,16 +70,22 @@ async function sync() {
     }
 
     if (args.dry) {
-      console.log(`[dry run] Marking stories as done: `, storiesUpdate)
+      console.log(`\n[dry run] Marking stories as done: `, storiesUpdate)
     } else {
       shortcut.updateMultipleStories(storiesUpdate)
     }
   }
 
+  status.succeed()
+
   let storiesToCreate = []
+
+  status = ora({text: 'Syncing active Github issues to Shortcut stories', color: 'cyan'})
+  status.start()
 
   // Loop through each issue in Github
   for (const issue of issues) {
+    // TODO We may be getting rate limited here? We should see if we can fetch all these first
     const matchingStories = await shortcut.getExternalLinkStories({external_link: issue.html_url})
     const stories = matchingStories.data.filter(story => story.external_id === issue.id)
 
@@ -82,9 +105,10 @@ async function sync() {
       }
 
       if (args.dry) {
-        console.log(`[dry run] Creating story: `, { ...createStory, description: `${createStory.description.substring(0, 16)}...`})
+        // console.log(`\n[dry run] Creating story: `, { ...createStory, description: `${createStory.description.substring(0, 16)}...`})
       } else {
         storiesToCreate.push(createStory)
+        metrics.created += 1
 
         // batch issue creation
         if (storiesToCreate.length % 10 === 0) {
@@ -106,8 +130,10 @@ async function sync() {
           continue
         }
 
+        metrics.updated += 1
+
         if (args.dry) {
-          console.log(`[dry run] Updating story: `, { ...updateStory, description: `${updateStory.description.substring(0, 16)}...`})
+          console.log(`\n[dry run] Updating story: `, { ...updateStory, description: `${updateStory.description.substring(0, 16)}...`})
         } else {
           //  call update
           await shortcut.updateStory(story.id, updateStory)
@@ -120,6 +146,10 @@ async function sync() {
   if (storiesToCreate.length) {
     await shortcut.createMultipleStories(storiesToCreate)
   }
+
+  status.succeed()
+
+  console.log(`Created: ${metrics.created}, Updated: ${metrics.updated}, Closed: ${metrics.closed}`)
 
   return
 }

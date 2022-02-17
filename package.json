@@ -5,10 +5,12 @@
   "repository": "git@github.com:j0sh77/github-shortcut-sync.git",
   "author": "Josh <jcjohnson77@gmail.com>",
   "license": "MIT",
+  "type": "module",
   "dependencies": {
     "@useshortcut/client": "^1.0.0",
     "dotenv": "^16.0.0",
     "github-api": "^3.4.0",
+    "ora": "^6.0.1",
     "yargs": "^17.3.1"
   },
   "scripts": {
