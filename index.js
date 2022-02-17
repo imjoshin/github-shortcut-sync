@@ -124,7 +124,7 @@ async function sync() {
       metrics.created += 1
 
       if (args.dry) {
-        // console.log(`\n[dry run] Creating story: `, { ...createStory, description: `${createStory.description.substring(0, 16)}...`})
+        console.log(`\n[dry run] Creating story: `, { ...createStory, description: `${createStory.description.substring(0, 16)}...`})
       } else {
         storiesToCreate.push(createStory)
 
