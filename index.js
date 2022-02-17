@@ -5,6 +5,7 @@ import Github from "github-api"
 import { ShortcutClient as Shortcut } from "@useshortcut/client"
 import ora from "ora"
 import dotenv from "dotenv";
+import { exit } from "process";
 
 dotenv.config()
 
@@ -20,6 +21,24 @@ const args = yargs()
   .help()
   .alias("help", "h")
   .parse()
+
+const requiredEnvVars = [
+  "GITHUB_AUTH",
+  "GITHUB_REPO_OWNER",
+  "GITHUB_REPO",
+  "SHORTCUT_AUTH",
+  "SHORTCUT_LABEL",
+  "SHORTCUT_STORY_PREFIX",
+  "SHORTCUT_WORKFLOW_ID_DONE",
+  "SHORTCUT_WORKFLOW_ID_NEW",
+]
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.log(`\n"${envVar}" is missing, check .env file to make sure it's set.\n`)
+    exit(1)
+  }
+}
 
 const github = new Github({
   token: process.env.GITHUB_AUTH
